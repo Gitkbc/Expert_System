@@ -3,10 +3,10 @@ class CarDiagnosis {
   final List<String> _answers = [];
   int _state = 0;
   int _questionCount = 0;
-
   int _accessoryIssueCount = 0;
 
-  /// Returns the next question based on current state
+  int getCurrentState() => _state;
+
   String getCurrentQuestion() {
     switch (_state) {
       case 0: return 'Is the car starting when you turn the key?';
@@ -24,114 +24,85 @@ class CarDiagnosis {
       case 12: return 'Is the AC working?';
       case 13: return 'Is there any smell near the exhaust?';
       case 14: return 'Is the fuel consumption very high?';
-      case 15: return 'Does the brake pedal feel soft or spongy?';
+      case 15: return 'Does the brake pedal feel soft or spongy/unable to feel the brake tension ?';
       case 16: return 'Are the brakes responding late?';
       case 17: return 'Is the steering wheel hard to turn?';
       case 18: return 'Do you hear clicking sounds while turning?';
       case 19: return 'Is there any fluid leakage under the car?';
+      case 20: return 'Is the engine overheating after short drives?';
+      case 21: return 'Does the engine crank slowly or not at all?';
+      case 22: return 'Does the car shake while idling?';
+      case 23: return 'Is there a delay in gear shifting?';
+      case 24: return 'Does the check engine light stay on?';
+      case 25: return 'Do you smell fuel inside the car?';
+      case 26: return 'Is the car stalling unexpectedly?';
+      case 27: return 'Does the car vibrate when braking?';
+      case 28: return 'Do the windows roll up/down smoothly?';
+      case 29: return 'Is there rust around the door or underbody?';
       default: return 'Diagnosis complete!';
     }
   }
 
-  /// Returns options for current question
   List<String> getCurrentOptions() => ['Yes', 'No'];
 
-  /// Updates state and determines diagnosis if possible
   String updateDiagnosis(String answer) {
     _answers.add(answer);
     _questionCount++;
 
-    // Auto-stop after 8 questions
-    if (_questionCount > 8) {
-      _diagnosisResult = 'Diagnosis inconclusive. Please consult a mechanic for further checks.';
+    if (_questionCount >= 30) {
+      _diagnosisResult = 'Diagnosis inconclusive after multiple checks. Please consult a mechanic.';
       _state = 999;
       return _diagnosisResult;
     }
 
     switch (_state) {
       case 0:
-        if (answer == 'No') {
-          _state = 1; // Start electrical/accessory checks
-        } else {
-          _state = 6; // Jump to mechanical path
-        }
+        _state = (answer == 'No') ? 1 : 6;
         break;
 
       case 1:
-        if (answer == 'No') _accessoryIssueCount++;
-        _state = 2;
-        break;
-
       case 2:
-        if (answer == 'No') _accessoryIssueCount++;
-        _state = 3;
-        break;
-
       case 3:
-        if (answer == 'No') _accessoryIssueCount++;
-        _state = 4;
-        break;
-
       case 4:
         if (answer == 'No') _accessoryIssueCount++;
-        _state = 5;
+        _state++;
         break;
 
       case 5:
         if (_accessoryIssueCount >= 3) {
-          _diagnosisResult = 'Battery or hardware issue detected. Please try jump starting the car or check battery terminals.';
+          _finalizeDiagnosis('Battery or major electrical issue. Try jump-starting or check terminals.');
         } else {
-          _diagnosisResult = 'Minor accessory glitch. Battery seems okay.';
+          _finalizeDiagnosis('Minor accessory issue. Battery seems okay.');
         }
-        _state = 999;
         break;
 
       case 6:
-        if (answer == 'Yes') {
-          _state = 7;
-        } else {
-          _state = 10;
-        }
+        _state = answer == 'Yes' ? 7 : 10;
         break;
 
       case 7:
-        if (answer == 'Yes') {
-          _state = 9;
-        } else {
-          _state = 8;
-        }
+        _state = answer == 'Yes' ? 9 : 8;
         break;
 
       case 8:
-        if (answer == 'Yes') {
-          _diagnosisResult = 'Possible axle or suspension issue. Please inspect the axle.';
-        } else {
-          _diagnosisResult = 'No serious mechanical issue detected.';
-        }
-        _state = 999;
+        _finalizeDiagnosis(answer == 'Yes'
+            ? 'Possible axle or suspension problem. Inspect suspension or underbody.'
+            : 'No critical issue under the car detected.');
         break;
 
       case 9:
-        if (answer == 'Yes') {
-          _diagnosisResult = 'Tyre puncture or misalignment detected. Please inspect tyres.';
-        } else {
-          _diagnosisResult = 'Wobbling may be due to suspension imbalance.';
-        }
-        _state = 999;
+        _finalizeDiagnosis(answer == 'Yes'
+            ? 'Tyre alignment or suspension issue.'
+            : 'Mild wobble may be due to imbalance.');
         break;
 
       case 10:
-        if (answer == 'Yes') {
-          _state = 11;
-        } else {
-          _diagnosisResult = 'No light issues detected.';
-          _state = 999;
-        }
+        _state = answer == 'Yes' ? 11 : 12;
         break;
 
       case 11:
         if (answer == 'No') {
-          _diagnosisResult = 'Adjust the brightness of the headlights.';
+          _finalizeDiagnosis('Check headlight brightness settings.');
         } else {
           _state = 12;
         }
@@ -139,7 +110,7 @@ class CarDiagnosis {
 
       case 12:
         if (answer == 'No') {
-          _diagnosisResult = 'AC failure. Might be a fuse or compressor issue.';
+          _finalizeDiagnosis('AC issue. Could be fuse or compressor failure.');
         } else {
           _state = 13;
         }
@@ -147,7 +118,7 @@ class CarDiagnosis {
 
       case 13:
         if (answer == 'Yes') {
-          _diagnosisResult = 'Fuel/exhaust issue. May need immediate inspection.';
+          _finalizeDiagnosis('Unusual exhaust smell. Check for leaks or fuel system issues.');
         } else {
           _state = 14;
         }
@@ -155,7 +126,7 @@ class CarDiagnosis {
 
       case 14:
         if (answer == 'Yes') {
-          _diagnosisResult = 'High fuel usage. Possibly due to clogged injectors or air filters.';
+          _finalizeDiagnosis('High fuel consumption. Likely clogged air filter or injector issues.');
         } else {
           _state = 15;
         }
@@ -163,7 +134,7 @@ class CarDiagnosis {
 
       case 15:
         if (answer == 'Yes') {
-          _diagnosisResult = 'Brake fluid leak or worn brake pads.';
+          _finalizeDiagnosis('Brake fluid leakage or pad wear.');
         } else {
           _state = 16;
         }
@@ -171,7 +142,7 @@ class CarDiagnosis {
 
       case 16:
         if (answer == 'Yes') {
-          _diagnosisResult = 'Brakes responding late. Could be a hydraulic issue.';
+          _finalizeDiagnosis('Brakes responding late. Check hydraulic system.');
         } else {
           _state = 17;
         }
@@ -179,7 +150,7 @@ class CarDiagnosis {
 
       case 17:
         if (answer == 'Yes') {
-          _diagnosisResult = 'Steering pump failure. Needs checking.';
+          _finalizeDiagnosis('Steering issue. Possible pump or fluid problem.');
         } else {
           _state = 18;
         }
@@ -187,7 +158,7 @@ class CarDiagnosis {
 
       case 18:
         if (answer == 'Yes') {
-          _diagnosisResult = 'CV joint failure. Needs servicing.';
+          _finalizeDiagnosis('Clicking while turning: CV joint problem.');
         } else {
           _state = 19;
         }
@@ -195,21 +166,101 @@ class CarDiagnosis {
 
       case 19:
         if (answer == 'Yes') {
-          _diagnosisResult = 'Oil/coolant leak detected. Get it checked soon.';
+          _finalizeDiagnosis('Leak detected. Check coolant, oil or brake fluid.');
         } else {
-          _diagnosisResult = 'No major issue found.';
+          _state = 20;
         }
-        _state = 999;
+        break;
+
+      case 20:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Overheating engine. Inspect coolant, fan, or thermostat.');
+        } else {
+          _state = 21;
+        }
+        break;
+
+      case 21:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Battery or starter motor problem.');
+        } else {
+          _state = 22;
+        }
+        break;
+
+      case 22:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Shaking when idling. Possible misfire or engine mount issue.');
+        } else {
+          _state = 23;
+        }
+        break;
+
+      case 23:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Delayed gear shift. Check transmission fluid.');
+        } else {
+          _state = 24;
+        }
+        break;
+
+      case 24:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Check engine light on. Use an OBD-II scanner.');
+        } else {
+          _state = 25;
+        }
+        break;
+
+      case 25:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Fuel smell detected. Possible fuel leak. Dangerous!');
+        } else {
+          _state = 26;
+        }
+        break;
+
+      case 26:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Stalling issue. May be due to fuel pump or idle control valve.');
+        } else {
+          _state = 27;
+        }
+        break;
+
+      case 27:
+        if (answer == 'Yes') {
+          _finalizeDiagnosis('Vibrating while braking: rotor or pad issue.');
+        } else {
+          _state = 28;
+        }
+        break;
+
+      case 28:
+        if (answer == 'No') {
+          _finalizeDiagnosis('Power window issue. Likely motor or regulator fault.');
+        } else {
+          _state = 29;
+        }
+        break;
+
+      case 29:
+        _finalizeDiagnosis(answer == 'Yes'
+            ? 'Rust detected. Treat to prevent further damage.'
+            : 'No major issues found. Car seems to be in good condition.');
         break;
     }
 
     return _diagnosisResult;
   }
 
-  /// Whether the diagnosis is done
+  void _finalizeDiagnosis(String result) {
+    _diagnosisResult = result;
+    _state = 999;
+  }
+
   bool isDiagnosisComplete() => _state == 999;
 
-  /// Reset the diagnosis session
   void reset() {
     _answers.clear();
     _diagnosisResult = '';
